@@ -9,7 +9,6 @@ scale_variables <- function(data, mns, sds){
 add_adjacent_ints <- function(x, prefix){
   factors = paste("AF", seq(1, 5), sep="")
   factor_grid = expand.grid(factors, factors)
-  print(factor_grid)
   for (i in 2:18){
     pos2 = paste(prefix, i, sep="")
     if (!(paste(pos2, "AF1", sep="_") %in% colnames(x))) { next }
@@ -93,58 +92,45 @@ get_feat_score <- function(x, amap){
   return(sum/nchar(x))
 }
 
-featurize_tcrs <- function(data, cdr3_align="mid", add_ints52 = FALSE, return_seq_grid=FALSE, beta_only=FALSE, do_jgenes = TRUE, restrict_length=TRUE){
+featurize_tcrs <- function(data, chain, cdr3_align="mid", cdr_only = TRUE, add_ints52 = TRUE, return_seq_grid=FALSE, do_jgenes = TRUE, restrict_length=TRUE){
 
   library(dplyr)
   library(stringr)
   library(hash)
-
-  TRBVref$TRB_line <- NULL
-  TRBVref$TRB_type <- NULL
-  TRAVref$TRA_line <- NULL
-  TRAVref$TRA_type <- NULL
-  TRAJref = TRAJref[,c("TRA_Gene", "TRA_Jtail")]
-  TRBJref = TRBJref[,c("TRB_Gene", "TRB_Jtail")]
 
   brd_BV = TRBVgrid$gene[!(grepl("-", TRBVgrid$gene))]
   brd_BJ = TRBJgrid$gene[!(grepl("-", TRBJgrid$gene))]
   brd_AV = TRAVgrid$gene[!(grepl("-", TRAVgrid$gene))]
   brd_AJ = TRAJgrid$gene[!(grepl("-", TRAJgrid$gene))]
   brds <- c(brd_BV, brd_BJ, brd_AV, brd_AJ)
-  ##possibly reformat V and J genes
-  print(nrow(data))
-  print(head(data))
-  data$TCRB_vgene = as.character(data$TCRB_vgene)
-  data$TCRB_jgene = as.character(data$TCRB_jgene)
-  data = data[data$TCRB_vgene!="unresolved",]
-  if (do_jgenes){ data = data[data$TCRB_jgene!="unresolved",]; data = data[!(is.na(data$TCRB_jgene)),] }
-  print(nrow(data))
-  data = data[data$TCRB_vgene!="",]
-  data = data[!(is.na(data$TCRB_vgene)),]
-  print(nrow(data))
-  print(table(data$TCRB_vgene))
-  data$TCRB_vgene = sapply(as.character(data$TCRB_vgene), function(x) reformat_gene(x, gene="V", brds))
-  print(table(data$TCRB_jgene))
-  if (do_jgenes){
-    data$TCRB_jgene = sapply(as.character(data$TCRB_jgene), function(x) reformat_gene(x, gene="J", brds))
-    data = data[data$TCRB_jgene %in% TRBJgrid$gene,]
+
+  if (chain %in% c("b", "ab")){
+    data$TCRB_vgene = as.character(data$TCRB_vgene)
+    data$TCRB_jgene = as.character(data$TCRB_jgene)
+    data = data[data$TCRB_vgene!="unresolved",]
+    data = data[data$TCRB_vgene!="",]
+    data$TCRB_vgene = sapply(as.character(data$TCRB_vgene), function(x) reformat_gene(x, gene="V", brds))
+    data = data[data$TCRB_vgene %in% TRBVgrid$gene,]
+    if (do_jgenes){
+      data = data[data$TCRB_jgene!="unresolved",]
+      data$TCRB_jgene = sapply(as.character(data$TCRB_jgene), function(x) reformat_gene(x, gene="J", brds))
+      data = data[data$TCRB_jgene %in% TRBJgrid$gene,]
+    }
+    data$TCRB_cdr3aa = as.character(data$TCRB_cdr3aa)
+    if (restrict_length){
+      nc = sapply(data$TCRB_cdr3aa, function(x) nchar(x))
+      data = data[nc >=11 & nc <= 18,]
+    }
   }
-  data = data[data$TCRB_vgene %in% TRBVgrid$gene,]
-  print(nrow(data))
-  data$TCRB_cdr3aa = as.character(data$TCRB_cdr3aa)
-  if (restrict_length){
-    nc = sapply(data$TCRB_cdr3aa, function(x) nchar(x))
-    data = data[nc >=11 & nc <= 18,]
-  }
-  if (!(beta_only)){
+  if (chain %in% c("a", "ab")){
     data$TCRA_vgene = as.character(data$TCRA_vgene)
     data$TCRA_jgene = as.character(data$TCRA_jgene)
     data = data[data$TCRA_vgene!="unresolved",]
     data = data[data$TCRA_vgene!="",]
-    if (do_jgenes) { data = data[data$TCRA_jgene!="unresolved",] }
     data$TCRA_vgene = sapply(as.character(data$TCRA_vgene), function(x) reformat_gene(x, gene="V", brds))
     data = data[data$TCRA_vgene %in% TRAVgrid$gene,]
     if (do_jgenes){
+      data = data[data$TCRA_jgene!="unresolved",]
       data$TCRA_jgene = sapply(as.character(data$TCRA_jgene), function(x) reformat_gene(x, gene="J", brds))
       data = data[data$TCRA_jgene %in% TRAJgrid$gene,]
     }
@@ -154,34 +140,31 @@ featurize_tcrs <- function(data, cdr3_align="mid", add_ints52 = FALSE, return_se
       data = data[nc >=10 & nc <= 17,]
     }
   }
-
-  if (!(beta_only)){
-    pos = left_join(data, TRAVgrid, by=c("TCRA_vgene"="gene"))
+  pos = data
+  if (chain %in% c("a", "ab")){
+    pos = left_join(pos, TRAVgrid, by=c("TCRA_vgene"="gene"))
     pos = left_join(pos, TRAJgrid, by=c("TCRA_jgene"="gene"))
-    pos = left_join(pos, TRBVgrid, by=c("TCRB_vgene"="gene"))
-  } else {
-    pos = left_join(data, TRBVgrid, by=c("TCRB_vgene"="gene"))
   }
-  pos = left_join(pos, TRBJgrid, by=c("TCRB_jgene"="gene"))
-  ##now need to think about LR or mid alignment
-  print(head(data))
-  nc = sapply(data$TCRB_cdr3aa, function(x) nchar(x))
-  print(min(nc))
-  print(max(nc))
-  print("any NAs?")
-  print(table(is.na(data$TCRB_cdr3aa)))
-  print(table(is.na(nc)))
-  if (!(beta_only)){
+  if (chain %in% c("b", "ab")){
+    pos = left_join(pos, TRBVgrid, by=c("TCRB_vgene"="gene"))
+    pos = left_join(pos, TRBJgrid, by=c("TCRB_jgene"="gene"))
+  }
+
+  if (chain %in% c("a", "ab")){
+    nc = sapply(data$TCRB_cdr3aa, function(x) nchar(x))
     for (i in 1:17){
       pos$new = sapply(data$TCRA_cdr3aa, function(y) substr(y, str_index(nchar(y), i, cdr3_align, 17), str_index(nchar(y), i, cdr3_align, 17)))
       pos$new[is.na(pos$new)] = "."
       colnames(pos)[ncol(pos)] = paste("TRAcdr3_p", i, sep="")
     }
   }
-  for (i in 1:18){
-    pos$new = sapply(data$TCRB_cdr3aa, function(y) substr(y, str_index(nchar(y), i, cdr3_align, 18), str_index(nchar(y), i, cdr3_align, 18)))
-    pos$new[is.na(pos$new)] = "."
-    colnames(pos)[ncol(pos)] = paste("TRBcdr3_p", i, sep="")
+
+  if (chain %in% c("b", "ab")){
+    for (i in 1:18){
+      pos$new = sapply(data$TCRB_cdr3aa, function(y) substr(y, str_index(nchar(y), i, cdr3_align, 18), str_index(nchar(y), i, cdr3_align, 18)))
+      pos$new[is.na(pos$new)] = "."
+      colnames(pos)[ncol(pos)] = paste("TRBcdr3_p", i, sep="")
+    }
   }
   if (return_seq_grid){
     ind = which(colnames(pos)=="TRA_p1")
@@ -190,25 +173,40 @@ featurize_tcrs <- function(data, cdr3_align="mid", add_ints52 = FALSE, return_se
     return(pos)
   }
 
-  if (!(beta_only)){
-    loops = left_join(data, TRAVref, by=c("TCRA_vgene"="gene"))
+  loops = data
+  segs = vector(mode="character")
+  positions = vector(mode="character")
+  if (chain %in% c("a", "ab")){
+    loops = left_join(loops, TRAVref, by=c("TCRA_vgene"="gene"))
     loops = left_join(loops, TRAJref, by=c("TCRA_jgene"="TRA_Gene"))
+    ind = which(colnames(loops)=="TRA_FR1")
+    segs = c(segs, colnames(loops)[ind:ncol(loops)], "TCRA_cdr3aa")
+    positions = c(positions, colnames(pos)[grepl("TRA_", colnames(pos))], colnames(pos)[grepl("TRAcdr3", colnames(pos))])
+  }
+  if (chain %in% c("b", "ab")){
     loops = left_join(loops, TRBVref, by=c("TCRB_vgene"="gene"))
     loops = left_join(loops, TRBJref, by=c("TCRB_jgene"="TRB_Gene"))
-  } else {
-    loops = left_join(data, TRBVref, by=c("TCRB_vgene"="gene"))
-    loops = left_join(loops, TRBJref, by=c("TCRB_jgene"="TRB_Gene"))
+    ind = which(colnames(loops)=="TRB_FR1")
+    segs = c(segs, colnames(loops)[ind:ncol(loops)], "TCRB_cdr3aa")
+    positions = c(positions, colnames(pos)[grepl("TRB_", colnames(pos))], colnames(pos)[grepl("TRBcdr3", colnames(pos))])
   }
+
+  if (cdr_only){
+    segs = segs[!(grepl("_FR", segs))]
+    segs = segs[!(grepl("_Jtail", segs))]
+    cdr = c("TRA_p27", "TRA_p28", "TRA_p29", "TRA_p30", "TRA_p36",
+      "TRA_p37", "TRA_p38", "TRA_p56", "TRA_p57", "TRA_p58", "TRA_p63",
+      "TRA_p64", "TRA_p65", "TRB_p27", "TRB_p28", "TRB_p29", "TRB_p36",
+      "TRB_p37", "TRB_p38", "TRB_p56", "TRB_p57", "TRB_p58", "TRB_p59",
+      "TRB_p63", "TRB_p64","TRB_p65")
+    positions = positions[grepl("cdr3", positions) | positions %in% cdr]
+  }
+  pos = pos[,as.character(positions)]
+
   prc_fts = data.frame(id = as.character(data[,1]))
   ##we don't calculate G because this is our reference
   aminos <- c("A", "C", "D", "E", "F", "H", "I", "K", "L", "M", "N", "P", "Q", "R", "S", "T", "V", "W", "Y")
-  if (!(beta_only)){
-    ind = which(colnames(loops)=="TRA_FR1")
-    segs = c(colnames(loops)[ind:ncol(loops)], "TCRA_cdr3aa", "TCRB_cdr3aa")
-  } else {
-    ind = which(colnames(loops)=="TRB_FR1")
-    segs = c(colnames(loops)[ind:ncol(loops)], "TCRB_cdr3aa")
-  }
+
   for (i in 1:length(segs)){
     ind = which(colnames(loops)==segs[i])
     loops[,ind] = as.character(loops[,ind])
@@ -225,47 +223,20 @@ featurize_tcrs <- function(data, cdr3_align="mid", add_ints52 = FALSE, return_se
   }
 
   atch_fts = data.frame(id = as.character(data[,1]))
-  if (!(beta_only)){
-    ind = which(colnames(pos)=="TRA_p1")
-  } else {
-    ind = which(colnames(pos)=="TRB_p1")
-  }
 
-  for (i in ind:ncol(pos)){
+  for (i in 1:ncol(pos)){
     for (j in 1:5){
       atch_fts$new = sapply(pos[,i], function(x) get_feat_score(x, atch_maps[[j]]))
       colnames(atch_fts)[ncol(atch_fts)] = paste(colnames(pos)[i], paste("AF", j, sep=""), sep="_")
     }
   }
-  if (!(beta_only)){
-    res = data.frame(cbind(prc_fts[,1:21], atch_fts[,2:which(colnames(atch_fts)=="TRA_p26_AF5")],
-                           prc_fts[,22:41], atch_fts[which(colnames(atch_fts)=="TRA_p27_AF1"):which(colnames(atch_fts)=="TRA_p38_AF5")],
-                           prc_fts[,42:61], atch_fts[which(colnames(atch_fts)=="TRA_p39_AF1"):which(colnames(atch_fts)=="TRA_p55_AF5")],
-                           prc_fts[,62:81], atch_fts[which(colnames(atch_fts)=="TRA_p56_AF1"):which(colnames(atch_fts)=="TRA_p65_AF5")],
-                           prc_fts[,82:101], atch_fts[which(colnames(atch_fts)=="TRA_p66_AF1"):which(colnames(atch_fts)=="TRA_p103_AF5")],
-                           prc_fts[,242:261], atch_fts[which(colnames(atch_fts)=="TRAcdr3_p1_AF1"):which(colnames(atch_fts)=="TRAcdr3_p17_AF5")],
-                           prc_fts[,102:121], atch_fts[which(colnames(atch_fts)=="TRA_p119_AF1"):which(colnames(atch_fts)=="TRA_p128_AF5")],
 
-                           prc_fts[,122:141], atch_fts[,which(colnames(atch_fts)=="TRB_p1_AF1"):which(colnames(atch_fts)=="TRB_p26_AF5")],
-                           prc_fts[,142:161], atch_fts[which(colnames(atch_fts)=="TRB_p27_AF1"):which(colnames(atch_fts)=="TRB_p38_AF5")],
-                           prc_fts[,162:181], atch_fts[which(colnames(atch_fts)=="TRB_p39_AF1"):which(colnames(atch_fts)=="TRB_p55_AF5")],
-                           prc_fts[,182:201], atch_fts[which(colnames(atch_fts)=="TRB_p56_AF1"):which(colnames(atch_fts)=="TRB_p65_AF5")],
-                           prc_fts[,202:221], atch_fts[which(colnames(atch_fts)=="TRB_p66_AF1"):which(colnames(atch_fts)=="TRB_p103_AF5")],
-                           prc_fts[,262:281], atch_fts[which(colnames(atch_fts)=="TRBcdr3_p1_AF1"):which(colnames(atch_fts)=="TRBcdr3_p18_AF5")],
-                           prc_fts[,222:241], atch_fts[which(colnames(atch_fts)=="TRB_p119_AF1"):which(colnames(atch_fts)=="TRB_p127_AF5")]))
-  } else {
-    res = data.frame(cbind(prc_fts[,1:21], atch_fts[,2:which(colnames(atch_fts)=="TRB_p26_AF5")],
-                           prc_fts[,22:41], atch_fts[which(colnames(atch_fts)=="TRB_p27_AF1"):which(colnames(atch_fts)=="TRB_p38_AF5")],
-                           prc_fts[,42:61], atch_fts[which(colnames(atch_fts)=="TRB_p39_AF1"):which(colnames(atch_fts)=="TRB_p55_AF5")],
-                           prc_fts[,62:81], atch_fts[which(colnames(atch_fts)=="TRB_p56_AF1"):which(colnames(atch_fts)=="TRB_p65_AF5")],
-                           prc_fts[,82:101], atch_fts[which(colnames(atch_fts)=="TRB_p66_AF1"):which(colnames(atch_fts)=="TRB_p103_AF5")],
-                           prc_fts[,122:141], atch_fts[which(colnames(atch_fts)=="TRBcdr3_p1_AF1"):which(colnames(atch_fts)=="TRBcdr3_p18_AF5")],
-                           prc_fts[,102:121], atch_fts[which(colnames(atch_fts)=="TRB_p119_AF1"):which(colnames(atch_fts)=="TRB_p127_AF5")]))
-  }
+  res = cbind(prc_fts, atch_fts[,2:ncol(atch_fts)])
   if (add_ints52){
-    res = add_adjacent_ints(res, "TRAcdr3_p")
-    res = add_adjacent_ints(res, "TRBcdr3_p")
+    if (chain %in% c("a", "ab")){ res = add_adjacent_ints(res, "TRAcdr3_p") }
+    if (chain %in% c("b", "ab")){ res = add_adjacent_ints(res, "TRBcdr3_p") }
   }
+
   return(res)
 }
 
@@ -286,13 +257,14 @@ score_tcrs <- function(data, chain){
   } else {
     print("please specificy the 'chain' argument (a, b, or ab)")
   }
+  rownames(ftz) = as.character(ftz$id)
   ftz = scale_variables(ftz, mns_x, sds_x)
   scores = as.matrix(ftz) %*% as.matrix(ldgs)
   rownames(scores) = rownames(ftz)
   scores[,1] = -scores[,1]
   scores[,3] = -scores[,3]
-  colnames(scores) = c("TCRinnnate", "TCR-8", "TCRmem", "TCRreg")
-  return(scores)
+  colnames(scores) = c("TCRinnate", "TCR-8", "TCRmem", "TCRreg")
+  return(data.frame(scores))
 }
 
 
