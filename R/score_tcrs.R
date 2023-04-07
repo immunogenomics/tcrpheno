@@ -1,3 +1,4 @@
+#' @export
 score_tcrs <- function(data, chain){
   ftz = featurize_tcrs(data, chain)
   if (chain=="ab"){
