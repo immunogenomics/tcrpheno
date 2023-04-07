@@ -1,3 +1,11 @@
+scale_variables <- function(data, mns, sds){
+  data = data[,as.character(names(mns))]
+  data = sweep(data, 2, mns)
+  data = sweep(data, MARGIN=2, FUN="/", sds)
+  data[is.na(data)] <- 0
+  return(data)
+}
+
 add_adjacent_ints <- function(x, prefix){
   factors = paste("AF", seq(1, 5), sep="")
   factor_grid = expand.grid(factors, factors)
@@ -259,6 +267,32 @@ featurize_tcrs <- function(data, cdr3_align="mid", add_ints52 = FALSE, return_se
     res = add_adjacent_ints(res, "TRBcdr3_p")
   }
   return(res)
+}
+
+score_tcrs <- function(data, chain){
+  ftz = featurize_tcrs(data, chain)
+  if (chain=="ab"){
+    ldgs = ABldgs
+    mns_x = ABmns_x
+    sds_x = ABsds_x
+  } else if (chain=="a"){
+    ldgs = Aldgs
+    mns_x = Amns_x
+    sds_x = Asds_x
+  } else if (chain=="b"){
+    ldgs = Bldgs
+    mns_x = Bmns_x
+    sds_x = Bsds_x
+  } else {
+    print("please specificy the 'chain' argument (a, b, or ab)")
+  }
+  ftz = scale_variables(ftz, mns_x, sds_x)
+  scores = as.matrix(ftz) %*% as.matrix(ldgs)
+  rownames(scores) = rownames(ftz)
+  scores[,1] = -scores[,1]
+  scores[,3] = -scores[,3]
+  colnames(scores) = c("TCRinnnate", "TCR-8", "TCRmem", "TCRreg")
+  return(scores)
 }
 
 
