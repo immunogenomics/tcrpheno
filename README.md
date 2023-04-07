@@ -12,6 +12,16 @@ You can install development version of tcrpheno from Github with:
 remotes::install_github("kalaga27/tcrpheno")
 ```
 
+## Main Function
+
+The main function is score_tcrs(), which takes two arguments:
+
+1. data: input TCR data. please use the column names demonstrated in tcrpheno_input. first column is cell identifier, order of columns does not matter otherwise.
+2. 
+3. chain: is your TCR data paired or single-chain? "ab"=paired ab TCRs, "a"=alpha chain only, "b"=beta chain only
+
+## Output
+
 score_tcrs computes four TCR scores:
 
 -TCRinnate: higher-scoring T cells are more likely to reach an innate-like PLZFhigh fate (MAIT and NKT TCRs score quite high)
