@@ -1,3 +1,7 @@
+#' score TCR sequences
+#'
+#' @param data TCR sequence data
+#' @param chain whether the TCR data is paired a-b ("ab"), alpha only ("a") or beta only ("b")
 #' @export
 score_tcrs <- function(data, chain){
   ftz = featurize_tcrs(data, chain)
