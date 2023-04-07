@@ -47,7 +47,7 @@ reformat_gene <- function(string, gene, brds){
 }
 
 create_hashmap <- function(key_vector, val_vector){
-  h = hash()
+  h = hash::hash()
   for (i in 1:length(key_vector)){
     h[[key_vector[i]]] = val_vector[i]
   }
@@ -94,10 +94,6 @@ get_feat_score <- function(x, amap){
 
 featurize_tcrs <- function(data, chain, cdr3_align="mid", cdr_only = TRUE, add_ints52 = TRUE, return_seq_grid=FALSE, do_jgenes = TRUE, restrict_length=TRUE){
 
-  library(dplyr)
-  library(stringr)
-  library(hash)
-
   brd_BV = TRBVgrid$gene[!(grepl("-", TRBVgrid$gene))]
   brd_BJ = TRBJgrid$gene[!(grepl("-", TRBJgrid$gene))]
   brd_AV = TRAVgrid$gene[!(grepl("-", TRAVgrid$gene))]
@@ -142,12 +138,12 @@ featurize_tcrs <- function(data, chain, cdr3_align="mid", cdr_only = TRUE, add_i
   }
   pos = data
   if (chain %in% c("a", "ab")){
-    pos = left_join(pos, TRAVgrid, by=c("TCRA_vgene"="gene"))
-    pos = left_join(pos, TRAJgrid, by=c("TCRA_jgene"="gene"))
+    pos = dplyr::left_join(pos, TRAVgrid, by=c("TCRA_vgene"="gene"))
+    pos = dplyr::left_join(pos, TRAJgrid, by=c("TCRA_jgene"="gene"))
   }
   if (chain %in% c("b", "ab")){
-    pos = left_join(pos, TRBVgrid, by=c("TCRB_vgene"="gene"))
-    pos = left_join(pos, TRBJgrid, by=c("TCRB_jgene"="gene"))
+    pos = dplyr::left_join(pos, TRBVgrid, by=c("TCRB_vgene"="gene"))
+    pos = dplyr::left_join(pos, TRBJgrid, by=c("TCRB_jgene"="gene"))
   }
 
   if (chain %in% c("a", "ab")){
@@ -177,15 +173,15 @@ featurize_tcrs <- function(data, chain, cdr3_align="mid", cdr_only = TRUE, add_i
   segs = vector(mode="character")
   positions = vector(mode="character")
   if (chain %in% c("a", "ab")){
-    loops = left_join(loops, TRAVref, by=c("TCRA_vgene"="gene"))
-    loops = left_join(loops, TRAJref, by=c("TCRA_jgene"="TRA_Gene"))
+    loops = dplyr::left_join(loops, TRAVref, by=c("TCRA_vgene"="gene"))
+    loops = dplyr::left_join(loops, TRAJref, by=c("TCRA_jgene"="TRA_Gene"))
     ind = which(colnames(loops)=="TRA_FR1")
     segs = c(segs, colnames(loops)[ind:ncol(loops)], "TCRA_cdr3aa")
     positions = c(positions, colnames(pos)[grepl("TRA_", colnames(pos))], colnames(pos)[grepl("TRAcdr3", colnames(pos))])
   }
   if (chain %in% c("b", "ab")){
-    loops = left_join(loops, TRBVref, by=c("TCRB_vgene"="gene"))
-    loops = left_join(loops, TRBJref, by=c("TCRB_jgene"="TRB_Gene"))
+    loops = dplyr::left_join(loops, TRBVref, by=c("TCRB_vgene"="gene"))
+    loops = dplyr::left_join(loops, TRBJref, by=c("TCRB_jgene"="TRB_Gene"))
     ind = which(colnames(loops)=="TRB_FR1")
     segs = c(segs, colnames(loops)[ind:ncol(loops)], "TCRB_cdr3aa")
     positions = c(positions, colnames(pos)[grepl("TRB_", colnames(pos))], colnames(pos)[grepl("TRBcdr3", colnames(pos))])
@@ -210,10 +206,10 @@ featurize_tcrs <- function(data, chain, cdr3_align="mid", cdr_only = TRUE, add_i
   for (i in 1:length(segs)){
     ind = which(colnames(loops)==segs[i])
     loops[,ind] = as.character(loops[,ind])
-    prc_fts$new = sapply(loops[,ind], function(x) nchar(x) - str_count(x, "\\."))
+    prc_fts$new = sapply(loops[,ind], function(x) nchar(x) - stringr::str_count(x, "\\."))
     colnames(prc_fts)[ncol(prc_fts)]  = paste(segs[i], "length", sep="_")
     for (j in 1:length(aminos)){
-      prc_fts$new = sapply(loops[,ind], function(x) str_count(x, aminos[j])/(nchar(x)-str_count(x, "\\.")))
+      prc_fts$new = sapply(loops[,ind], function(x) stringr::str_count(x, aminos[j])/(nchar(x)-stringr::str_count(x, "\\.")))
       colnames(prc_fts)[ncol(prc_fts)] = paste(segs[i], paste("prc", aminos[j], sep=""), sep="_")
     }
   }
