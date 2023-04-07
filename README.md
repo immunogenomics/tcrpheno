@@ -14,11 +14,16 @@ remotes::install_github("kalaga27/tcrpheno")
 
 ## Main Function
 
-The main function is score_tcrs(), which takes two arguments:
+The main function is:
 
-1. data: input TCR data. please use the column names demonstrated in tcrpheno_input. first column is cell identifier, order of columns does not matter otherwise.
-2. 
-3. chain: is your TCR data paired or single-chain? "ab"=paired ab TCRs, "a"=alpha chain only, "b"=beta chain only
+``` r
+score_tcrs(data, chain)
+```
+arguments:
+
+1. data: input TCR data. the tcrpheno package contains example data `tcrpheno_input` to demonstrate column names. first column is cell identifier, order of columns does not matter otherwise.
+
+2. chain: is your TCR data paired or single-chain? "ab"=paired ab TCRs, "a"=alpha chain only, "b"=beta chain only
 
 ## Output
 
