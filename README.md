@@ -29,7 +29,7 @@ arguments:
 
 score_tcrs computes four TCR scores:
 
--TCRinnate: higher-scoring T cells are more likely to reach an innate-like PLZFhigh fate (MAIT and NKT TCRs score quite high)
+-TCRinnate: higher-scoring T cells are more likely to reach an innate-like PLZFhigh fate (e.g. MAIT and NKT TCRs)
 
 -TCR.8: higher-scoring T cells are more likely to reach a CD8 (vs. CD4) fate
 
