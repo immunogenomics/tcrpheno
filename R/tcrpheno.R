@@ -93,9 +93,7 @@ get_feat_score <- function(x, amap){
 }
 
 featurize_tcrs <- function(data, chain, cdr3_align="mid", cdr_only = TRUE, add_ints52 = TRUE, return_seq_grid=FALSE, do_jgenes = TRUE, restrict_length=TRUE){
-  print("hello")
   brd_BV = TRBVgrid$gene[!(grepl("-", TRBVgrid$gene))]
-  print("can't find TRBV grid")
   brd_BJ = TRBJgrid$gene[!(grepl("-", TRBJgrid$gene))]
   brd_AV = TRAVgrid$gene[!(grepl("-", TRAVgrid$gene))]
   brd_AJ = TRAJgrid$gene[!(grepl("-", TRAJgrid$gene))]
