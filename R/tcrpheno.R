@@ -148,7 +148,7 @@ featurize_tcrs <- function(data, chain, cdr3_align="mid", cdr_only = TRUE, add_i
   if (chain %in% c("a", "ab")){
     nc = sapply(data$TCRB_cdr3aa, function(x) nchar(x))
     for (i in 1:17){
-      pos$new = sapply(data$TCRA_cdr3aa, function(y) substr(y, str_index(nchar(y), i, cdr3_align, 17), str_index(nchar(y), i, cdr3_align, 17)))
+      pos$new = suppressWarnings(sapply(data$TCRA_cdr3aa, function(y) substr(y, str_index(nchar(y), i, cdr3_align, 17), str_index(nchar(y), i, cdr3_align, 17))))
       pos$new[is.na(pos$new)] = "."
       colnames(pos)[ncol(pos)] = paste("TRAcdr3_p", i, sep="")
     }
@@ -156,7 +156,7 @@ featurize_tcrs <- function(data, chain, cdr3_align="mid", cdr_only = TRUE, add_i
 
   if (chain %in% c("b", "ab")){
     for (i in 1:18){
-      pos$new = sapply(data$TCRB_cdr3aa, function(y) substr(y, str_index(nchar(y), i, cdr3_align, 18), str_index(nchar(y), i, cdr3_align, 18)))
+      pos$new = suppressWarnings(sapply(data$TCRB_cdr3aa, function(y) substr(y, str_index(nchar(y), i, cdr3_align, 18), str_index(nchar(y), i, cdr3_align, 18))))
       pos$new[is.na(pos$new)] = "."
       colnames(pos)[ncol(pos)] = paste("TRBcdr3_p", i, sep="")
     }
