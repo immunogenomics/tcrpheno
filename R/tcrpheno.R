@@ -94,9 +94,8 @@ get_feat_score <- function(x, amap){
 }
 
 featurize_tcrs <- function(data, chain, cdr3_align="mid", cdr_only = TRUE, add_ints52 = TRUE, return_seq_grid=FALSE, do_jgenes = TRUE, restrict_length=TRUE){
-  print("hello")
+  print("adding CDR1 and CDR2 based on V gene...")
   brd_BV = TRBVgrid$gene[!(grepl("-", TRBVgrid$gene))]
-  print("can't find TRBV grid")
   brd_BJ = TRBJgrid$gene[!(grepl("-", TRBJgrid$gene))]
   brd_AV = TRAVgrid$gene[!(grepl("-", TRAVgrid$gene))]
   brd_AJ = TRAJgrid$gene[!(grepl("-", TRAJgrid$gene))]
@@ -147,11 +146,11 @@ featurize_tcrs <- function(data, chain, cdr3_align="mid", cdr_only = TRUE, add_i
     pos = dplyr::left_join(pos, TRBVgrid, by=c("TCRB_vgene"="gene"))
     pos = dplyr::left_join(pos, TRBJgrid, by=c("TCRB_jgene"="gene"))
   }
-
+  print("identifying amino acids at each position...")
   if (chain %in% c("a", "ab")){
     nc = sapply(data$TCRB_cdr3aa, function(x) nchar(x))
     for (i in 1:17){
-      pos$new = sapply(data$TCRA_cdr3aa, function(y) substr(y, str_index(nchar(y), i, cdr3_align, 17), str_index(nchar(y), i, cdr3_align, 17)))
+      pos$new = suppressWarnings(sapply(data$TCRA_cdr3aa, function(y) substr(y, str_index(nchar(y), i, cdr3_align, 17), str_index(nchar(y), i, cdr3_align, 17))))
       pos$new[is.na(pos$new)] = "."
       colnames(pos)[ncol(pos)] = paste("TRAcdr3_p", i, sep="")
     }
@@ -159,7 +158,7 @@ featurize_tcrs <- function(data, chain, cdr3_align="mid", cdr_only = TRUE, add_i
 
   if (chain %in% c("b", "ab")){
     for (i in 1:18){
-      pos$new = sapply(data$TCRB_cdr3aa, function(y) substr(y, str_index(nchar(y), i, cdr3_align, 18), str_index(nchar(y), i, cdr3_align, 18)))
+      pos$new = suppressWarnings(sapply(data$TCRB_cdr3aa, function(y) substr(y, str_index(nchar(y), i, cdr3_align, 18), str_index(nchar(y), i, cdr3_align, 18))))
       pos$new[is.na(pos$new)] = "."
       colnames(pos)[ncol(pos)] = paste("TRBcdr3_p", i, sep="")
     }
@@ -170,7 +169,6 @@ featurize_tcrs <- function(data, chain, cdr3_align="mid", cdr_only = TRUE, add_i
     rownames(pos) = as.character(data[,1])
     return(pos)
   }
-
   loops = data
   segs = vector(mode="character")
   positions = vector(mode="character")
@@ -215,6 +213,7 @@ featurize_tcrs <- function(data, chain, cdr3_align="mid", cdr_only = TRUE, add_i
       colnames(prc_fts)[ncol(prc_fts)] = paste(segs[i], paste("prc", aminos[j], sep=""), sep="_")
     }
   }
+  print("converting amino acids into Atchley factors...")                         
   atch_maps <- list()
   for (i in 2:ncol(atch)){
     atch_maps[[i-1]] <- create_hashmap(c(as.character(atch$symbol), "."), c(as.numeric(as.character(atch[,i])), NA))
@@ -228,7 +227,7 @@ featurize_tcrs <- function(data, chain, cdr3_align="mid", cdr_only = TRUE, add_i
       colnames(atch_fts)[ncol(atch_fts)] = paste(colnames(pos)[i], paste("AF", j, sep=""), sep="_")
     }
   }
-
+  print("adding interactions between adjacent residues...")
   res = cbind(prc_fts, atch_fts[,2:ncol(atch_fts)])
   if (add_ints52){
     if (chain %in% c("a", "ab")){ res = add_adjacent_ints(res, "TRAcdr3_p") }

@@ -5,7 +5,7 @@
 #' @export
 score_tcrs <- function(data, chain){
   ftz = featurize_tcrs(data, chain)
-  print("featurized")
+  print("TCRs featurized!")
   if (chain=="ab"){
     ldgs = ABldgs
     mns_x = ABmns_x
@@ -21,6 +21,7 @@ score_tcrs <- function(data, chain){
   } else {
     print("please specificy the 'chain' argument (a, b, or ab)")
   }
+  print("scoring TCRs...")
   rownames(ftz) = as.character(ftz$id)
   ftz = scale_variables(ftz, mns_x, sds_x)
   scores = as.matrix(ftz) %*% as.matrix(ldgs)
@@ -28,5 +29,6 @@ score_tcrs <- function(data, chain){
   scores[,1] = -scores[,1]
   scores[,3] = -scores[,3]
   colnames(scores) = c("TCRinnate", "TCR-8", "TCRmem", "TCRreg")
+  print("all done!")
   return(data.frame(scores))
 }
