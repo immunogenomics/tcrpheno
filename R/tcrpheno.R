@@ -26,6 +26,7 @@ add_adjacent_ints <- function(x, prefix){
 
 reformat_gene <- function(string, gene, brds){
   string = gsub("\\*", "-", string)
+  string = gsub("\\.", "-", string)
   pref = strsplit(string, gene)[[1]][1]
   info = strsplit(string, gene)[[1]][2]
   fam = strsplit(info, "-")[[1]][1]
