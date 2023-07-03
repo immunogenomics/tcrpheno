@@ -25,6 +25,8 @@ score_tcrs <- function(data, chain, MAIT_NKT = FALSE){
   m = mns[as.character(rownames(weights)),]
   s = sds[as.character(rownames(weights)),]
   print("scoring TCRs...")
+  print(dim(ftz))
+  print(dim(weights))
   rownames(ftz) = as.character(ftz$id)
   ftz = scale_variables(ftz, m, s)
   scores = as.matrix(ftz) %*% as.matrix(weights)
