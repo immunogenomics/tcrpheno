@@ -22,8 +22,8 @@ score_tcrs <- function(data, chain, MAIT_NKT = FALSE){
   } else {
     print("please specify the 'chain' argument (a, b, or ab)")
   }
-  m = mns[as.character(rownames(weights))]
-  s = sds[as.character(rownames(weights))]
+  m = mns[as.character(rownames(weights)),]
+  s = sds[as.character(rownames(weights)),]
   print("scoring TCRs...")
   rownames(ftz) = as.character(ftz$id)
   ftz = scale_variables(ftz, m, s)
