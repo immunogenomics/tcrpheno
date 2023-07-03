@@ -15,7 +15,7 @@ score_tcrs <- function(data, chain, MAIT_NKT = FALSE){
   } else if (chain=="b"){
     weights = weightsB
     score_names = gsub("TCR", "TCRbeta", score_names)
-    if (MAIT_NKT = TRUE){
+    if (MAIT_NKT == TRUE){
       weights = weightsMAITNKT
       score_names = c("TCRbeta-MAIT", "TCRbeta-NKT")
     }
