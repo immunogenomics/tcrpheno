@@ -6,6 +6,14 @@ scale_variables <- function(data, mns, sds){
   return(data)
 }
 
+get_AA <- function(seqs, i, cdr3_align, max_length){
+  seqs = as.character(seqs)
+  nc = sapply(seqs, function(x) nchar(x))
+  new = suppressWarnings(sapply(1:length(seqs), function(y) ifelse(nc[y]==0, ".", substr(seqs[y], str_index(nchar(seqs[y]), i, cdr3_align, max_length), str_index(nchar(seqs[y]), i, cdr3_align, max_length)))))
+  new[is.na(new)] = "."
+  return(new)
+}
+
 add_adjacent_ints <- function(x, prefix){
   factors = paste("AF", seq(1, 5), sep="")
   factor_grid = expand.grid(factors, factors)
