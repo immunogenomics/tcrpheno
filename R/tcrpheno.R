@@ -105,22 +105,6 @@ featurize_tcrs <- function(data, chain, cdr3_align="mid", cdr_only = TRUE, add_i
   library(stringr)
   library(hash)
 
-  TRBVref$gene = gsub("\\/", "", TRBVref$gene)
-  TRBJref$TRB_Gene = gsub("\\/", "", TRBJref$TRB_Gene)
-  TRAJref$TRA_Gene = gsub("\\/", "", TRAJref$TRA_Gene)
-  TRAVref$gene = gsub("\\/", "", TRAVref$gene)
-  TRBVref$TRB_line <- NULL
-  TRBVref$TRB_type <- NULL
-  TRAVref$TRA_line <- NULL
-  TRAVref$TRA_type <- NULL
-  TRAJref = TRAJref[,c("TRA_Gene", "TRA_Jtail")]
-  TRBJref = TRBJref[,c("TRB_Gene", "TRB_Jtail")]
-
-  TRBJgrid$gene = gsub("\\/", "", TRBJgrid$gene)
-  TRBVgrid$gene = gsub("\\/", "", TRBVgrid$gene)
-  TRAJgrid$gene = gsub("\\/", "", TRAJgrid$gene)
-  TRAVgrid$gene = gsub("\\/", "", TRAVgrid$gene)
-
   print("adding CDR1 and CDR2 based on V gene...")
   brd_BV = TRBVgrid$gene[!(grepl("-", TRBVgrid$gene))]
   brd_BJ = TRBJgrid$gene[!(grepl("-", TRBJgrid$gene))]
