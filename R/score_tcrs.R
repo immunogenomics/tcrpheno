@@ -7,10 +7,10 @@ score_tcrs <- function(data, chain, MAIT_NKT = FALSE){
   score_names = c("TCR-innate", "TCR-CD8", "TCR-reg", "TCR-mem")
   ftz = featurize_tcrs(data, chain)
   print("TCRs featurized!")
+  score_means = ABscore_mns
+  score_sds = ABscore_sds
   if (chain=="ab"){
     weights = weightsAB
-    score_means = ABscore_mns
-    score_sds = ABscore_sds
   } else if (chain=="a"){
     weights = weightsA
     score_names = gsub("TCR", "TCRalpha", score_names)
