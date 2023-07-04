@@ -39,7 +39,7 @@ score_tcrs <- function(data, chain, MAIT_NKT = FALSE){
   scores = as.matrix(ftz) %*% as.matrix(weights)
   rownames(scores) = rownames(ftz)
   colnames(scores) = score_names
-  names(score_mns) = score_names
+  names(score_means) = score_names
   names(score_sds) = score_names
   scores = scale_variables(scores, score_means, score_sds)
   ##scaling factors
